@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #canvas {
+            border: 1px solid #000000;
+            /* color: #e70f0f; */
+        }
+    </style>
+</head>
+
+<body onload="inicializar()">
+
+
+    <canvas id="canvas" width="750px" height="500px"></canvas>
+
+    <script>
+
+        var canvas;
+        var ctx;
+        var fps = 50;
+        var anchoF = 50;
+        var altoF = 50;
+
+        var muro = '#044f14';
+        var puerta = '#3a1700';
+        var tierra = '#c6892f';
+        var llaveColor = "#eeff00";
+
+        var protagonista;
+        var tileMap;
+        var brujaSound;
+        var antorcha;
+
+        var escenario = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0, 2, 2, 0],
+            [0, 0, 2, 2, 2, 2, 2, 0, 0, 2, 0, 0, 2, 0, 0],
+            [0, 0, 2, 0, 0, 0, 2, 2, 0, 2, 2, 2, 2, 0, 0],
+            [0, 0, 2, 2, 2, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0],
+            [0, 2, 1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0],
+            [0, 0, 2, 0, 0, 0, 2, 2, 2, 0, 0, 2, 2, 2, 0],
+            [0, 2, 2, 2, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0],
+            [0, 2, 2, 2, 0, 0, 2, 0, 0, 2, 2, 2, 3, 2, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
+
+
+
+
+        function dibujaEscenario() {
+
+            for (y = 0; y < 10; y++) {
+                for (x = 0; x < 15; x++) {
+                    var tile = escenario[y][x];
+                    ctx.drawImage(tileMap, tile * 32, 0, 32, 32, anchoF * x, altoF * y, anchoF, altoF);
+
+                }
+            }
+
+
+        }
+        var retrasoAntorcha = 25;
+        var contadorAntorcha = 0;
+        var fotogramaAntorcha = 0;
+
+
+        antorcha = function (x, y) {
+            this.x = x;
+            this.y = y;
+
+
+            this.dibuja = function () {
+                if (contadorAntorcha < retrasoAntorcha) {
+                    contadorAntorcha++;
+                } else {
+                    if (fotogramaAntorcha < 3) {
+                        fotogramaAntorcha++;
+                    }
+                    else {
+                        fotogramaAntorcha = 0;
+                    }
+
+                    ctx.drawImage(tileMap, fotogramaAntorcha * 32, 64, 32, 32, anchoF * x, altoF * y, anchoF, altoF);
+
+                }
+            }
+
+        }
+
+
+
+        var colision = false;
+        var llave = false;
+        var psy;
+        var psx;
+        var enemigo = [];
+        var a;
+        var bandMove;
+
+        var malo = function (x, y) {
+            this.x = x;
+            this.y = y;
+            console.log("Enemigo creado");
+
+            this.dibuja = function () {
+
+                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+            }
+
+
+            this.retraso = 20;
+            this.contador = 0;
+            this.banderin = 0;
+
+            this.sound = function () {
+            }
+            var contin = 0;
+            var bandfinish = 0;
+            var aleatfinish = Math.floor(Math.random() * 3);
+            // var aleatfinish = 2;
+
+            var UnoIda1 = [
+                [-1, 0],
+                [-1, 0],
+                [0, 1],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [0, -1],
+                [-1, 0],
+                [-1, 0],
+
+            ];
+            var UnoVuelta1 = [
+                [1, 0],
+                [1, 0],
+                [0, 1],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [0, -1],
+                [1, 0],
+                [1, 0],
+            ];
+
+            // separacion ---------
+
+            var UnoIda11 = [
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [-1, 0],
+                [-1, 0],
+                [0, -1],
+                [0, -1],
+                [-1, 0],
+                [-1, 0],
+
+
+            ];
+            var UnoVuelta11 = [
+                [1, 0],
+                [1, 0],
+                [0, 1],
+                [0, 1],
+                [1, 0],
+                [1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+
+            ];
+            // separacion ---------
+
+            var UnoIda111 = [
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+            ];
+            var UnoVuelta111 = [
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+            ];
+
+
+            var contador1 = 0;
+            var contador11 = 0
+            var contador111 = 0;
+
+            this.colisiones = function (x, y) {
+                alaX = x;
+                alaY = y;
+            }
+
+            var alaYXband = false;
+
+            this.mueve1 = function () {
+
+
+
+
+                if (aleatfinish === 2 && contador1 < 100) {
+                    contador1++;
+
+                }
+
+                else if (aleatfinish === 2) {
+
+                    while (contin < 1) {
+                        this.x = 6;
+                        this.y = 8;
+                        contin = 1;
+                        break;
+                    }
+
+                    if (contador111 < 120) {
+                        contador111++;
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+
+                        if (this.contador < this.retraso) {
+                            this.contador++;
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador = 0;
+                         
+
+
+
+                            if (UnoIda1.length > 0 && aleatfinish === 2 && alaYXband === false) {
+                                this.y = this.y + UnoIda1[0][0];
+                                this.x = this.x + UnoIda1[0][1];
+                                UnoIda1.shift();
+                            }
+                            if (UnoIda1.length === 0 && UnoVuelta1.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta1[0][0];
+                                this.x = this.x + UnoVuelta1[0][1];
+                                UnoVuelta1.shift();
+                            }
+
+                            if (UnoIda1.length === 0 && UnoVuelta1.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda1.length === 0 && UnoVuelta1.length === 0 && contador11 < 100) {
+                                    this.contador = 30;
+
+
+                                    contador11++;
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador11 = 0;
+                                    console.log("CHARLY")
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin = 0;
+                                    aleatfinish = Math.floor(Math.random() * 3);
+                                    // aleatfinish = 2;
+                                    contador1 = 0;
+                                    contador111 = 0;
+                                    this.contador = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+
+
+                                    UnoIda1 = [
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, 1],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, -1],
+                                        [-1, 0],
+                                        [-1, 0],
+
+                                    ];
+                                    UnoVuelta1 = [
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, 1],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, -1],
+                                        [1, 0],
+                                        [1, 0],
+                                    ];
+                                }
+
+
+
+
+
+
+
+                            }
+
+                        }
+                    }
+                }
+            
+
+                if (aleatfinish === 1 && contador1 < 100) {
+                    contador1++;
+
+                }
+
+                else if (aleatfinish === 1) {
+
+                    while (contin < 1) {
+                        this.x = 9;
+                        this.y = 8;
+                        contin = 1;
+                        break;
+                    }
+
+                    if (contador111 < 120) {
+                        contador111++;
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador < this.retraso) {
+                            this.contador++;
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                            this.sound = function () {
+                                return brujaSound.play();
+                            }
+                        } else {
+                            this.contador = 0;
+
+
+
+
+                            if (UnoIda11.length > 0 && aleatfinish === 1 && alaYXband === false) {
+                                this.y = this.y + UnoIda11[0][0];
+                                this.x = this.x + UnoIda11[0][1];
+                                UnoIda11.shift();
+                            }
+                            if (UnoIda11.length === 0 && UnoVuelta11.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta11[0][0];
+                                this.x = this.x + UnoVuelta11[0][1];
+                                UnoVuelta11.shift();
+                            }
+
+
+
+                            if (UnoIda11.length === 0 && UnoVuelta11.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda11.length === 0 && UnoVuelta11.length === 0 && contador11 < 100) {
+                                    this.contador = 30;
+
+
+                                    contador11++;
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador11 = 0;
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin = 0;
+                                    aleatfinish = Math.floor(Math.random() * 3);
+                                    //aleatfinish = 1;
+                                    contador1 = 0;
+                                    contador111 = 0;
+                                    this.contador = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda11 = [
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [-1, 0],
+                                        [-1, 0],
+
+
+                                    ];
+                                    UnoVuelta11 = [
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, 1],
+                                        [0, 1],
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+
+                                    ];
+
+                                }
+
+
+
+
+
+
+
+                            }
+
+                        }
+                    }
+                }
+
+           
+
+                if (aleatfinish === 0 && contador1 < 100) {
+                    contador1++;
+
+                }
+
+                else if (aleatfinish === 0) {
+
+                    while (contin < 1) {
+                        this.x = 2;
+                        this.y = 8;
+                        contin = 1;
+                        break;
+                    }
+
+                    if (contador111 < 120) {
+                        contador111++;
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador < this.retraso) {
+                            this.contador++;
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                            this.sound = function () {
+                                return brujaSound.play();
+                            }
+                        } else {
+                            this.contador = 0;
+
+
+
+                            if (UnoIda111.length > 0 && aleatfinish === 0 && alaYXband === false) {
+                                this.y = this.y + UnoIda111[0][0];
+                                this.x = this.x + UnoIda111[0][1];
+                                UnoIda111.shift();
+                            }
+                            if (UnoIda111.length === 0 && UnoVuelta111.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta111[0][0];
+                                this.x = this.x + UnoVuelta111[0][1];
+                                UnoVuelta111.shift();
+                            }
+
+
+
+                            if (UnoIda111.length === 0 && UnoVuelta111.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda111.length === 0 && UnoVuelta111.length === 0 && contador11 < 100) {
+                                    this.contador = 30;
+
+
+                                    contador11++;
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador11 = 0;
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin = 0;
+                                    aleatfinish = Math.floor(Math.random() * 3);
+                                    // aleatfinish = 0;
+                                    contador1 = 0;
+                                    contador111 = 0;
+                                    this.contador = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda111 = [
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                    ];
+                                    UnoVuelta111 = [
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                    ];
+
+                                }
+
+                            }
+
+                        }
+                    }
+                }
+
+            } /* AQUI TERMINA MUEVE1 */
+
+
+
+
+
+
+
+
+            var contin2 = 0;
+            var bandfinish2 = 0;
+            var aleatfinish2 = Math.floor(Math.random() * 3);
+
+            var UnoIda2 = [
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [-1, 0],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+
+            ];
+            var UnoVuelta2 = [
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+
+            ];
+
+            // separacion ---------
+
+            var UnoIda22 = [
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [1, 0],
+                [1, 0],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [-1, 0],
+                [-1, 0],
+                [0, 1],
+
+
+
+            ];
+            var UnoVuelta22 = [
+                [0, -1],
+                [1, 0],
+                [1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [-1, 0],
+                [-1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+
+
+            ];
+            // separacion ---------
+
+            var UnoIda222 = [
+                [0, -1],
+                [1, 0],
+                [1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [-1, 0],
+                [-1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [1, 0],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+
+            ];
+            var UnoVuelta222 = [
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [-1, 0],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [1, 0],
+                [1, 0],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [-1, 0],
+                [-1, 0],
+                [0, 1],
+
+            ];
+
+            this.retraso2 = 20;
+            this.contador2_1 = 0;
+            this.banderin2 = 0;
+
+            var contador2 = 0;
+            var contador22 = 0
+            var contador222 = 0;
+
+            this.mueve2 = function () {
+
+
+                if (aleatfinish2 === 2 && contador2 < 100) {
+                    contador2++;
+
+                }
+
+                else if (aleatfinish2 === 2) {
+
+                    while (contin2 < 1) {
+                        this.x = 2;
+                        this.y = 2;
+                        contin2 = 1;
+                        break;
+                    }
+
+                    if (contador222 < 120) {
+                        contador222++;
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador2_1 < this.retraso2) {
+                            this.contador2_1++;
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador2_1 = 0;
+
+
+
+                            if (UnoIda2.length > 0 && aleatfinish2 === 2 && alaYXband === false) {
+                                this.y = this.y + UnoIda2[0][0];
+                                this.x = this.x + UnoIda2[0][1];
+                                UnoIda2.shift();
+                            }
+                            if (UnoIda2.length === 0 && UnoVuelta2.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta2[0][0];
+                                this.x = this.x + UnoVuelta2[0][1];
+                                UnoVuelta2.shift();
+                            }
+
+
+                            if (UnoIda2.length === 0 && UnoVuelta2.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda2.length === 0 && UnoVuelta2.length === 0 && contador22 < 100) {
+                                    this.contador2_1 = 30;
+
+
+                                    contador22++;
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador22 = 0;
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin2 = 0;
+                                    aleatfinish2 = Math.floor(Math.random() * 3);
+                                    // aleatfinish = 2;
+                                    contador2 = 0;
+                                    contador222 = 0;
+                                    this.contador2_1 = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda2 = [
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [-1, 0],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+
+                                    ];
+                                    UnoVuelta2 = [
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+
+                                    ];
+                                }
+
+
+
+
+
+
+
+                            }
+
+                        }
+                    }
+                }
+            
+
+
+                if (aleatfinish2 === 1 && contador2 < 100) {
+                    contador2++;
+
+                }
+
+                else if (aleatfinish2 === 1) {
+
+                    while (contin2 < 1) {
+                        this.x = 6;
+                        this.y = 1;
+                        contin2 = 1;
+                        break;
+                    }
+
+                    if (contador222 < 120) {
+                        contador222++;
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador2_1 < this.retraso2) {
+                            this.contador2_1++;
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador2_1 = 0;
+
+
+
+                            if (UnoIda22.length > 0 && aleatfinish2 === 1 && alaYXband === false) {
+                                this.y = this.y + UnoIda22[0][0];
+                                this.x = this.x + UnoIda22[0][1];
+                                UnoIda22.shift();
+                            }
+                            if (UnoIda22.length === 0 && UnoVuelta22.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta22[0][0];
+                                this.x = this.x + UnoVuelta22[0][1];
+                                UnoVuelta22.shift();
+                            }
+
+
+
+                            if (UnoIda22.length === 0 && UnoVuelta22.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda22.length === 0 && UnoVuelta22.length === 0 && contador22 < 100) {
+                                    this.contador2_1 = 30;
+
+
+                                    contador22++;
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador22 = 0;
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin2 = 0;
+                                    aleatfinish2 = Math.floor(Math.random() * 3);
+                                    contador2 = 0;
+                                    contador222 = 0;
+                                    this.contador2_1 = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda22 = [
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, 1],
+
+
+
+                                    ];
+                                    UnoVuelta22 = [
+                                        [0, -1],
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+
+
+                                    ];
+                                }
+
+
+                            }
+
+                        }
+                    }
+                }
+            
+
+
+                if (aleatfinish2 === 0 && contador2 < 100) {
+                    contador2++;
+
+                }
+
+                else if (aleatfinish2 === 0) {
+
+                    while (contin2 < 1) {
+                        this.x = 13;
+                        this.y = 1;
+                        contin2 = 1;
+                        break;
+                    }
+
+                    if (contador222 < 120) {
+                        contador222++;
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador2_1 < this.retraso2) {
+                            this.contador2_1++;
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador2_1 = 0;
+
+
+
+                            if (UnoIda222.length > 0 && aleatfinish2 === 0 && alaYXband === false) {
+                                this.y = this.y + UnoIda222[0][0];
+                                this.x = this.x + UnoIda222[0][1];
+                                UnoIda222.shift();
+                            }
+                            if (UnoIda222.length === 0 && UnoVuelta222.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta222[0][0];
+                                this.x = this.x + UnoVuelta222[0][1];
+                                UnoVuelta222.shift();
+                            }
+
+
+
+                            if (UnoIda222.length === 0 && UnoVuelta222.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda222.length === 0 && UnoVuelta222.length === 0 && contador22 < 100) {
+                                    this.contador2_1 = 30;
+
+
+                                    contador22++;
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador22 = 0;
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin2 = 0;
+                                    aleatfinish2 = Math.floor(Math.random() * 3);
+                                    // aleatfinish = 2;
+                                    contador2 = 0;
+                                    contador222 = 0;
+                                    this.contador2_1 = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda222 = [
+                                        [0, -1],
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [1, 0],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+
+                                    ];
+                                    UnoVuelta222 = [
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [-1, 0],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [1, 0],
+                                        [1, 0],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [0, 1],
+
+                                    ];
+                                }
+
+
+
+
+
+
+
+                            }
+
+                        }
+                    }
+                }
+          
+
+
+
+
+
+
+            } /* AQUI TERMINA MUEVE2 */
+
+
+
+
+
+
+
+
+
+
+
+
+            var contin3 = 0;
+            var bandfinish3 = 0;
+            var aleatfinish3 = Math.floor(Math.random() * 3);
+
+            var UnoIda3 = [
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+
+
+            ];
+            var UnoVuelta3 = [
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+
+
+            ];
+
+           
+
+            var UnoIda33 = [
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+                [0, 1],
+
+
+
+
+            ];
+            var UnoVuelta33 = [
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+                [0, -1],
+
+
+            ];
+         
+
+            var UnoIda333 = [
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+                [1, 0],
+
+
+            ];
+            var UnoVuelta333 = [
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+                [-1, 0],
+
+
+            ];
+
+            this.retraso3 = 10;
+            this.contador2_2 = 0;
+            this.banderin3 = 0;
+
+            var contador3 = 0;
+            var contador33 = 0
+            var contador333 = 0;
+
+
+            this.mueve3 = function () {
+
+             
+
+                if (aleatfinish3 === 2 && contador3 < 100) {
+                    contador3++;
+
+                }
+
+                else if (aleatfinish3 === 2) {
+
+                    while (contin3 < 1) {
+                        this.x = 1;
+                        this.y = 3;
+                        contin3 = 1;
+                        break;
+                    }
+
+                    if (contador333 < 120) {
+                        contador333++;
+                 
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador2_2 < this.retraso3) {
+                            this.contador2_2++;
+                     
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador2_2 = 0;
+
+                        
+
+                            if (UnoIda3.length > 0 && aleatfinish3 === 2 && alaYXband === false) {
+                                this.y = this.y + UnoIda3[0][0];
+                                this.x = this.x + UnoIda3[0][1];
+                                UnoIda3.shift();
+                            }
+                            if (UnoIda3.length === 0 && UnoVuelta3.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta3[0][0];
+                                this.x = this.x + UnoVuelta3[0][1];
+                                UnoVuelta3.shift();
+                            }
+
+
+
+                            if (UnoIda3.length === 0 && UnoVuelta3.length === 0 || alaYXband === true) {
+
+
+
+
+                                if (UnoIda3.length === 0 && UnoVuelta3.length === 0 && contador33 < 100) {
+                                    this.contador2_2 = 30;
+
+
+                                    contador33++;
+                           
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador33 = 0;
+                                 
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin3 = 0;
+                                    aleatfinish3 = Math.floor(Math.random() * 3);
+                                    // aleatfinish = 2;
+                                    contador3 = 0;
+                               
+                                    contador333 = 0;
+                                    this.contador2_2 = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda3 = [
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+
+
+                                    ];
+                                    UnoVuelta3 = [
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+
+
+                                    ];
+
+                                }
+
+                            }
+
+                        }
+                    }
+                }
+           
+
+
+
+
+
+                if (aleatfinish3 === 1 && contador3 < 100) {
+                    contador3++;
+       
+
+                }
+
+                else if (aleatfinish3 === 1) {
+
+                    while (contin3 < 1) {
+                        this.x = 1;
+                        this.y = 6;
+                        contin3 = 1;
+                        break;
+                    }
+
+                    if (contador333 < 120) {
+                        contador333++;
+                   
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+
+                        if (this.contador2_2 < this.retraso3) {
+                            this.contador2_2++;
+                        
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador2_2 = 0;
+
+
+
+                            if (UnoIda33.length > 0 && aleatfinish3 === 1 && alaYXband === false) {
+                                this.y = this.y + UnoIda33[0][0];
+                                this.x = this.x + UnoIda33[0][1];
+                                UnoIda33.shift();
+                            }
+                            if (UnoIda33.length === 0 && UnoVuelta33.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta33[0][0];
+                                this.x = this.x + UnoVuelta33[0][1];
+                                UnoVuelta33.shift();
+                            }
+
+
+                       
+
+                            if (UnoIda33.length === 0 && UnoVuelta33.length === 0 || alaYXband === true) {
+
+
+                            
+
+
+                                if (UnoIda33.length === 0 && UnoVuelta3.length === 0 && contador33 < 100) {
+                                    this.contador2_2 = 30;
+
+
+                                    contador33++;
+                                 
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador33 = 0;
+                             
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin3 = 0;
+                                    aleatfinish3 = Math.floor(Math.random() * 3);
+                             
+                                    contador3 = 0;
+                                 
+                                    contador333 = 0;
+                                    this.contador2_2 = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+                                    UnoIda33 = [
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+                                        [0, 1],
+
+
+
+
+                                    ];
+                                    UnoVuelta33 = [
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+                                        [0, -1],
+
+
+                                    ];
+
+                                }
+
+
+
+
+
+
+
+                            }
+
+                        }
+                    }
+                }
+       
+
+
+
+
+                if (aleatfinish3 === 0 && contador3 < 100) {
+                    contador3++;
+             
+
+                }
+
+                else if (aleatfinish3 === 0) {
+
+                    while (contin3 < 1) {
+                        this.x = 8;
+                        this.y = 1;
+                        contin3 = 1;
+                        break;
+                    }
+
+                    if (contador333 < 120) {
+                        contador333++;
+                       
+                        this.dibuja = function () {
+                            ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                        }
+                        this.sound = function () {
+                            brujaSound.play();
+                        }
+
+
+
+
+
+                    } else {
+
+                        if (alaY === this.y && alaX === this.x) {
+                            alaYXband = true;
+                        }
+
+                        if (this.contador2_2 < this.retraso3) {
+                            this.contador2_2++;
+                           
+                            this.dibuja = function () {
+                                ctx.drawImage(tileMap, 0, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                            }
+                        } else {
+                            this.contador2_2 = 0;
+
+
+
+                            if (UnoIda333.length > 0 && aleatfinish3 === 0 && alaYXband === false) {
+                                this.y = this.y + UnoIda333[0][0];
+                                this.x = this.x + UnoIda333[0][1];
+                                // prota.colisiones(this.x,this.y);
+                                UnoIda333.shift();
+                            }
+                            if (UnoIda333.length === 0 && UnoVuelta333.length > 0 && alaYXband === false) {
+
+                                this.y = this.y + UnoVuelta333[0][0];
+                                this.x = this.x + UnoVuelta333[0][1];
+                                // prota.colisiones(this.x,this.y);
+
+                                UnoVuelta333.shift();
+                            }
+
+
+
+                            if (UnoIda333.length === 0 && UnoVuelta333.length === 0 || alaYXband === true) {
+
+
+                       
+
+
+                                if (UnoIda333.length === 0 && UnoVuelta333.length === 0 && contador33 < 100) {
+                                    this.contador2_2 = 30;
+
+
+                                    contador33++;
+                                   
+                                    this.dibuja = function () {
+                                        ctx.drawImage(tileMap, 64, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+                                    }
+
+
+                                }
+
+                                else {
+                                    contador33 = 0;
+                                  
+                                    this.x = -10;
+                                    this.y = 0;
+                                    contin3 = 0;
+                                    aleatfinish3 = Math.floor(Math.random() * 3);
+                                    // aleatfinish = 2;
+                                    contador3 = 0;
+                                    
+                                    contador333 = 0;
+                                    this.contador2_2 = 0;
+                                    this.sound = function () {
+                                        return brujaSound.pause();
+                                    }
+                                    if (alaYXband === true) {
+                                        prota.regreso(1, 1);
+                                        alaYXband = false;
+                                    }
+
+                                    UnoIda333 = [
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+                                        [1, 0],
+
+
+                                    ];
+                                    UnoVuelta333 = [
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+                                        [-1, 0],
+
+
+                                    ];
+
+
+                                }
+
+                            }
+
+                        }
+                    }
+                }
+         
+            } /* AQUI TERMINA MUEVE3 */
+
+
+
+
+
+        }
+
+
+
+
+        var protagonista = function () {
+            this.x = 1;
+            this.y = 1;
+            this.color = "#820c01"
+
+
+
+            this.dibuja = function () {
+                ctx.fillStyle = this.color;
+                // ctx.fillRect(this.x * anchoF, this.y * altoF, anchoF, altoF);
+                ctx.drawImage(tileMap, 32, 32, 32, 32, this.x * anchoF, this.y * altoF, anchoF, altoF);
+
+
+
+            }
+
+            this.margen = function () {
+
+
+            }
+
+
+            this.arriba = function () {
+                if (escenario[this.y - 1][this.x] !== 0) {
+                    this.y--;
+
+                }
+
+            }
+            this.abajo = function () {
+                if (escenario[this.y + 1][this.x] !== 0) {
+                    this.y++;
+
+                }
+
+            }
+            this.izquierda = function () {
+                if (escenario[this.y][this.x - 1] !== 0) {
+                    this.x--;
+
+                }
+
+            }
+            this.derecha = function () {
+                if (escenario[this.y][this.x + 1] !== 0) {
+                    this.x++;
+
+                }
+            }
+
+            this.key = function () {
+
+
+
+                if (escenario[this.y][this.x] === 3) {
+                    escenario[this.y][this.x] = 2;
+                    console.log("haz tomado la llave");
+                    llave = true;
+
+
+                }
+                else if (escenario[this.y][this.x] === 1 && llave == false) {
+                    console.log("Necesitas tomar la llave primero!")
+
+                }
+                else if (llave === true && escenario[this.y][this.x] === 1) {
+                    escenario[this.y][this.x] = 2;
+                    this.x = 1;
+                    this.y = 1;
+                    console.log(psx, psy);
+                    console.log("Entraste a la puerta");
+                    llave = false;
+
+                    var band = true;
+                    var band1 = true;
+                    while (band === true) {
+                        var ny = Math.floor(Math.random() * 9);
+                        var nx = Math.floor(Math.random() * 14);
+
+                        if (escenario[ny][nx] === 2) {
+
+
+                            band = false;
+                            console.log(escenario[ny][nx], ny, nx);
+                            escenario[ny][nx] = 3;
+
+
+                        }
+
+                    }
+                    while (band1 === true) {
+                        var ny = Math.floor(Math.random() * 9);
+                        var nx = Math.floor(Math.random() * 14);
+
+                        if (escenario[ny][nx] === 2) {
+
+
+                            band1 = false;
+                            console.log(escenario[ny][nx], ny, nx);
+                            escenario[ny][nx] = 1;
+
+
+                        }
+
+                    }
+
+
+                }
+
+                enemigo[0].colisiones(this.x, this.y)
+
+
+            }
+
+            this.regreso = function (x, y) {
+                this.x = x;
+                this.y = y;
+            }
+
+
+
+        }
+
+
+
+
+        var prota = new protagonista();
+        var imgAntorcha1 = new antorcha(0, 0);
+        var imgAntorcha2 = new antorcha(14, 0);
+        var imgAntorcha3 = new antorcha(0, 9);
+        var imgAntorcha4 = new antorcha(14, 9);
+        var imgAntorcha5 = new antorcha(6, 4);
+        var imgAntorcha6 = new antorcha(12, 5);
+
+
+
+        enemigo.push(new malo(-10, 1));
+        enemigo.push(new malo(-10, 0));
+        enemigo.push(new malo(-10, 1));
+
+
+        console.log(enemigo[0])
+
+
+
+
+
+        function inicializar() {
+            canvas = document.getElementById("canvas");
+            ctx = canvas.getContext("2d");
+            setInterval(function () {
+                principal();
+            }, 1000 / fps);
+            tileMap = new Image();
+            tileMap.src = "tilemap.png"
+
+            brujaSound = new Audio();
+            brujaSound.src = "carcajada-una-bruja.mp3";
+            //  brujaSound.play();
+
+
+        }
+
+        function borrar() {
+            canvas.width = 750;
+            canvas.height = 500;
+        }
+
+        function principal() {
+            borrar();
+            dibujaEscenario();
+            prota.dibuja();
+            prota.margen();
+            prota.key();
+
+            enemigo[0].mueve1();
+            enemigo[1].mueve2();
+            enemigo[2].mueve3();
+            enemigo[0].sound();
+
+
+            enemigo[0].dibuja();
+            enemigo[1].dibuja();
+            enemigo[2].dibuja();
+
+            imgAntorcha1.dibuja();
+            imgAntorcha2.dibuja();
+            imgAntorcha3.dibuja();
+            imgAntorcha4.dibuja();
+            imgAntorcha5.dibuja();
+            imgAntorcha6.dibuja();
+
+        }
+
+
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "w") {
+                prota.arriba();
+
+            }
+            if (e.key === "s") {
+                prota.abajo();
+
+            }
+            if (e.key === "a") {
+                prota.izquierda();
+
+            }
+            if (e.key === "d") {
+                prota.derecha();
+
+            }
+        })
+
+    </script>
+</body>
+
+</html>
